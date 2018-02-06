@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 
 // The static URL to SWAPI
-private const swapiUrl: string = "https://swapi.co/api/";
+const swapiUrl: string = "https://swapi.co/api/";
 
 @Injectable()
 export class SwapiProvider {
@@ -17,7 +17,11 @@ export class SwapiProvider {
    * @param id (ie: 1, 24, 101...)
    */
   public getSwapiData(category, id){
-    var testQuery = this.http.get ("https://swapi.co/api/"+category+"/"+id);
+
+    var query = this.http.get("https://swapi.co/api/"+category+"/"+id)
+    .map((res:Response) => res.json());
+
+    return JSON.stringify(query);
   }
 
 }

@@ -1,3 +1,4 @@
+import { SwapiProvider } from './../../providers/swapi/swapi';
 /**************************************************
  * 
  * All of the quiz logic can be found in this file
@@ -14,7 +15,7 @@ import { SwapiProvider } from "../../providers/swapi/swapi";
  */
 
 // The maximum amount of questions inside of a quiz
-private const maxQuestions: int = 10;
+const maxQuestions: number = 10;
 
 // Defining the different topics to question the user with
 var questionTopics = 
@@ -67,10 +68,7 @@ export class QuizSession {
     // Current state of the quiz
     private state = QuizStates.stopped;
 
-    // The provider to retrieve data from SWAPI
-    private SwapiProvider swapiProvider;
-
-    constructor(private http: HttpClientModule) {
+    constructor(private http: HttpClientModule, private swapiProvider: SwapiProvider) {
         this.initQuiz();
     }
 
@@ -87,16 +85,16 @@ export class QuizSession {
      * @param {*} answer = the clicked button DOM element
      * @returns a new question, or null if the quiz is over
      */
-    private answerQuestion(answer){
+    public answerQuestion(answer){
 
         // Retrieving points from the answer
         this.points = this.points + answer.points;
 
         // Preparing next question
         this.currentQuestionIndex++;
-        if(currentQuestionIndex < maxQuestions){
+        if(this.currentQuestionIndex < maxQuestions){
             // Getting a new question
-            var newQuestion = generateNewQuestion();
+            var newQuestion = this.generateNewQuestion();
             return newQuestion;
         }
 
@@ -113,7 +111,7 @@ export class QuizSession {
         this.state = QuizStates.running;
 
         // Generating a random number to know the topic of the question
-        var questionTopic = Math.floor((Math.random() * questionTopics.size()) + 0);
+        var questionTopic = Math.floor((Math.random() * questionTopics.length) + 0);
 
         // Generating a random number to query SWAPI with
         var min = questionTopics[questionTopic].queryRange[0];
@@ -121,9 +119,9 @@ export class QuizSession {
         var apiIndex = Math.floor((Math.random() * max) + min);
 
         // Call to SWAPI
-        var data = swapiProvider.getSwapiData(questionTopics[questionTopic].topic, apiIndex);
+        var data = this.swapiProvider.getSwapiData(questionTopics[questionTopic].topic, apiIndex);
 
-        console.log(data);
+        console.log("result from query =" + data);
         return null;
     }
 }
