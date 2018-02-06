@@ -8,7 +8,7 @@ import { SwapiProvider } from './../../providers/swapi/swapi';
 import { Injectable } from "@angular/core";
 import { HttpClientModule } from "@angular/common/http";
 import "rxjs/add/operator/map";
-import { SwapiProvider } from "../../providers/swapi/swapi";
+//import {Observable} from 'rxjs/Rx';
 
 /**
  * Quiz Constants
@@ -119,7 +119,11 @@ export class QuizSession {
         var apiIndex = Math.floor((Math.random() * max) + min);
 
         // Call to SWAPI
-        var data = this.swapiProvider.getSwapiData(questionTopics[questionTopic].topic, apiIndex);
+        var data = this.swapiProvider.getSwapiData(questionTopics[questionTopic].topic, apiIndex)
+            .subscribe(data => {console.log(data)},
+              err => console.error(err),
+              () => console.log('done')
+            );
 
         console.log("result from query =" + data);
         return null;

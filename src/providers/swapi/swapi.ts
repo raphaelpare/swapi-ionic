@@ -18,10 +18,10 @@ export class SwapiProvider {
    */
   public getSwapiData(category, id){
 
-    var query = this.http.get("https://swapi.co/api/"+category+"/"+id)
-    .map((res:Response) => res.json());
+    return this.http.get("https://swapi.co/api/"+category+"/"+id);
+    //.map((res:Response) => res.json());
 
-    return JSON.stringify(query);
+    //return JSON.stringify(query);
   }
 
 }
