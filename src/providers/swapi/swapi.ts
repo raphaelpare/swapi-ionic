@@ -110,8 +110,8 @@ private getPage(url: string): Observable<{next: string, results: Result[]}> {
             .map(response => {
                     let body = response;
                     return {
-                      next: body.next,
-                      results: body.results as Result[]
+                      next: body['next'],
+                      results: body['results'] as Result[]
                     };
                 }
             );

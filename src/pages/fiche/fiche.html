@@ -1,0 +1,25 @@
+<!--
+  Generated template for the FichePage page.
+
+  See http://ionicframework.com/docs/components/#navigation for more info on
+  Ionic pages and navigation.
+-->
+<ion-header>
+
+  <ion-navbar>
+    <ion-title>Fiche</ion-title>
+  </ion-navbar>
+
+</ion-header>
+
+
+<ion-content padding>
+  <ion-list>
+      <ion-item *ngFor="let item of fiche">
+          {{item.prop}}
+          <ion-note item-end>
+            {{item.value}}
+          </ion-note>
+        </ion-item>
+  </ion-list>
+</ion-content>
