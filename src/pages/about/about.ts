@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { NavController } from 'ionic-angular';
 import { SwapiProvider } from '../../providers/swapi/swapi';
 import { Observable } from 'rxjs/Rx';
+import { LoadingController } from 'ionic-angular';
 
 @Component({
   selector: 'page-about',
@@ -10,29 +11,26 @@ import { Observable } from 'rxjs/Rx';
 export class AboutPage {
   public results$: Observable<Object[]>
 
-  constructor(public navCtrl: NavController, private swapiProvider: SwapiProvider) {
+  constructor(public navCtrl: NavController, 
+    private swapiProvider: SwapiProvider,
+    public loadingCtrl: LoadingController) {
 
   }
 
-  loadWiki(element) {
-    console.log("Consult Wiki for :");
-    console.log(element);
+  loadWiki(element, title) {
 
-    //var data = this.swapiProvider.getSwapiDataPageFull(element,1);
-    /*  .flatMap((result) => {
-        return result;
-    });*/
-    //console.log("dataaaas");
-    //console.log(data);
+    let loader = this.loadingCtrl.create({
+      content: "Récupération des données intergalactiques..."
+    });
+    loader.present();
 
     this.results$ = this.swapiProvider.getAllPages(element);
-    /*  .flatMap((result) => {
-        return result;
-    });*/
+    this.results$.subscribe(e => {
+      loader.dismiss();
 
-    
-    console.log("dataaaas2");
-    console.log(this.results$);
+      this.navCtrl.push('DetailPage', { items:e, title: title });
+    })
+
   }
 
 }
