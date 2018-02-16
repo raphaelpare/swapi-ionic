@@ -88,13 +88,13 @@ export class SwapiProvider {
 
 
 
-  public getAllPages(element): Observable<Result[]> {
+  public getAllPages(element): Observable<Object[]> {
     return Observable.create(observer => {
           this.getPage("https://swapi.co/api/" + element)
             .expand((data, i) => {
                 return data.next ? this.getPage(data.next) : Observable.empty();
             })
-            .reduce((acc, data) => {
+            .reduce((acc:any, data) => {
                 return acc.concat(data.results);
               }, [])
             .catch(error => observer.error(error))
@@ -105,20 +105,16 @@ export class SwapiProvider {
     });
 }
 
-private getPage(url: string): Observable<{next: string, results: Result[]}> {
+private getPage(url: string): Observable<{next: string, results: Object[]}> {
   return this.http.get(url, { })
             .map(response => {
                     let body = response;
                     return {
                       next: body['next'],
-                      results: body['results'] as Result[]
+                      results: body['results'] as Object[]
                     };
                 }
             );
 }
 
 }
-
-/**export class Person {
-  name: string;
-}**/
