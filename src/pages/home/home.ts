@@ -23,12 +23,12 @@ export class HomePage {
     // console.log(choiceId);
     // console.log(points);
 
-    var nextQuestion = this.quizSession.answerQuestion({choiceId:0,points:1});
+    var nextQuestion = this.quizSession.answerQuestion(this, {choiceId:0,points:1});
     console.log(nextQuestion);
   }
 
-  showQuestion(){
-
+  public notifyAboutBuiltQuestion(question){
+    console.log(question);
   }
 
 }

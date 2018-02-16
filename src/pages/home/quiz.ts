@@ -1,46 +1,102 @@
 import { SwapiProvider } from './../../providers/swapi/swapi';
 /**************************************************
  * 
- * All of the quiz logic can be found in this file
+ * Toute la logique du quiz se trouve dans ce fichier
  * 
  **************************************************/
 
 import { Injectable } from "@angular/core";
 import { HttpClientModule } from "@angular/common/http";
 import "rxjs/add/operator/map";
-//import {Observable} from 'rxjs/Rx';
+import { Observable } from 'rxjs/Observable';
 
 /**
- * Quiz Constants
+ * Constantes du quiz
  */
 
-// The maximum amount of questions inside of a quiz
+// Le nombre maximum de questions dans un quiz
 const maxQuestions: number = 10;
 
-// Defining the different topics to question the user with
+// Le nombre maximum de réponses possibles dans une question
+const maxAnswers: number = 3;
+
+// Définition des différents sujets concernant Star Wars
 var questionTopics = 
 [
-    // Label = text added inside of original the description
-    // QueryRange = /<range> from which we will query SWAPI
-    // Topic = the /<topic_url>/ used to query SWAPI
+    // - QueryRange : /<<<range>>> l'intervalle par lequel on va interroger SWAPI (i.e.: https://swapi.co/api/people/<<<1>>>)
+    // - Topic      : /<<<topic_url>>>/ le type de données que l'on va interroger (i.e.: https://swapi.co/api/<<<people>>>/1)
+    // - Questions  : Toutes les questions possibles sur le sujet
+    //     - tag : tag spécial pour identifier le type de question
+    //     - text : le texte de la question (contenant encore les arguments '%s' à remplacer)
+    //     - args : les arguments '%s' correspondant au texte de la question
+    //     - answers : la réponse à la question (valeur de l'attribut fourni par l'API)
     {
-        label:"ce personnage",
         queryRange:[0,100],
-        topic:"people"
+        topic:"people",
+        questions:
+        [
+             {
+                 tag: "color",
+                 text:"Devinez la couleur des cheveux de %s !",
+                 args:["name"],
+                 answers:["hair_color"]
+             },
+             {
+                 tag: "color",
+                 text:"Devinez la couleur des yeux de %s !",
+                 args:["name"],
+                 answers:["eye_color"]
+            },
+            // {
+            //      tag: "text",
+            //      text:"Dans quel(s) film(s) %s apparaît-il (ou elle) ?",
+            //      args:["name"],
+            //      answers:["films"]
+            // },
+            {
+                tag: "planet",
+                text:"De quelle planète %s est-il (ou elle) originaire ?",
+                args:["name"],
+                answers:["homeworld"]
+            }
+        ]
     },
     {
-        label:"ce vaisseau",
         queryRange:[0,100],
-        topic:"starships"
+        topic:"starships",
+        questions:
+        [
+            {
+                tag: "quantity",
+                text:"Quelle est la taille du vaisseau %s (en mètres) ?",
+                args:["name"],
+                answers:["length"]
+            }
+        ]
     },
     {
-        label:"cette planète",
         queryRange:[0,100],
-        topic:"planets"
+        topic:"planets",
+        questions:
+        [
+            {
+                tag: "planetClimate",
+                text:"Quel est le climat de la planète %s ?",
+                args:["name"],
+                answers:["climate"]}
+        ]
     }
 ]
 
-// All of the possible quiz states
+// Toutes les couleurs possibles formattées
+const colors = {"red":"Rouge","blue":"Bleu","green":"Vert","yellow":"Jaune","orange":"Orange", "black":"Noir", "brown":"Marron", "blond":"Blond", "grey":"Gris", "gray":"Gris" }
+
+
+// Tous les climats formattés
+const climates = {"murky":"Sombre","temperate":"Tempéré","subartic":"Subarctique","arid":"Aride","unknown":"Inconnu","frozen":"Gelé","hot":"Chaud","moist":"Humide","tropical":"Tropical","artificial temperate ":"Artificiel tempéré","rocky":"Montagneux","windy":"Venteux","frigid":"Froid"}
+
+
+// Tous les états possibles du quiz
 enum QuizStates {
     stopped,
     running,
@@ -48,32 +104,50 @@ enum QuizStates {
 };
 
 /**
- * A quiz session
+ * Une session de quiz
  * -
- * Holds all of the information from the first to the last question the quiz
+ * Contient toutes les informations sur une session du quiz, de la première à la dernière question
+ * en passant par les points récoltés ou encore la question actuellement posée.
+ * 
+ * Cette classe contient également toutes les méthodes permettant de générer de nouvelles questions.
  */
 @Injectable()
 export class QuizSession {
 
     /**
-     * Variable declaration
+     * Déclaration des variables
      */
 
-    // Amount of points earned during this quiz
+    // Le nombre de points récoltés lors de ce quiz
     private points;
 
-    // Current position inside of the quiz
+    // La position actuelle à l'intérieur du quiz. Permet notamment de conserver un historique si l'on souhaite
+    // naviguer parmi les questions suivantes/précédentes.
     private currentQuestionIndex;
 
-    // Current state of the quiz
+    // L'état atuel de cette session de quiz (pas démarré, en cours, terminé)
     private state = QuizStates.stopped;
 
+    // Le tableau contenant toutes les questions du quiz. Il démarre vide.
+    private questions = [];
+
+    // L'observable contenant les résultats de SWAPI
+    public results$: Observable<Object[]>
+
+    // Le contexte par lequel le quiz est appelé
+    private context;
+
+    /**
+     * Constructeur
+     * @param http 
+     * @param swapiProvider 
+     */
     constructor(private http: HttpClientModule, private swapiProvider: SwapiProvider) {
         this.initQuiz();
     }
 
     /**
-     * Resets the quiz
+     * Remise à zéro du quiz
      */
     private initQuiz(){
         this.points = 0;
@@ -81,51 +155,296 @@ export class QuizSession {
     }
 
     /**
-     * Triggered once the user clicks on an answer
-     * @param {*} answer = the clicked button DOM element
-     * @returns a new question, or null if the quiz is over
+     * Déclenché lorsque le joueur choisie une réponse
+     * @param {*} answer = la réponse
      */
-    public answerQuestion(answer){
+    public answerQuestion(context, answer){
 
-        // Retrieving points from the answer
-        this.points = this.points + answer.points;
+        // On défini le contexte afin de lui notifier plus tard qu'une nouvelle question a été générée
+        this.context = context;
 
-        // Preparing next question
-        this.currentQuestionIndex++;
-        if(this.currentQuestionIndex < maxQuestions){
-            // Getting a new question
-            var newQuestion = this.generateNewQuestion();
-            return newQuestion;
+        // On récupère les points de la réponse
+        //this.points = this.points + answer.points;
+
+        // Préparation de la prochaine question
+        if(this.currentQuestionIndex < maxQuestions - 1){
+
+            // On rafraîchit l'état du quiz
+            this.state = QuizStates.running;
+
+            // On change la position du quiz sur la prochaine question
+            this.currentQuestionIndex = this.questions.length;
+
+            // Obtention d'une nouvelle question
+            this.generateNewQuestion(null);
+
+        } else {
+            // Si on est à court de questions, on change l'état du quiz à "terminé (over)"
+            this.state = QuizStates.over;
         }
 
-        this.state = QuizStates.over;
-        return null;
+        return this;
     }
 
     /**
-     * Generates a whole new random question
+     * Génère une nouvelle question
      */
-    public generateNewQuestion(){
+    public generateNewQuestion(topic){
 
-        // Refresh the state of the quiz
-        this.state = QuizStates.running;
+        // On indique l'index du sujet à interroger
+        // 0 : personnages
+        // 1 : vaisseaux
+        // 2 : planètes
+        var questionTopicIndex = topic; 
+        if(topic === null){ // s'il n'est pas défini comme paramètre de la méthode
+            // On génère un nombre aléatoire pour obtenir un index de sujet à interroger
+            questionTopicIndex = Math.floor((Math.random() * questionTopics.length) + 0);
+        }
 
-        // Generating a random number to know the topic of the question
-        var questionTopic = Math.floor((Math.random() * questionTopics.length) + 0);
+        // Pour le callback de la promise, on garde une référence de cette instance de quiz
+        var ref = this;
 
-        // Generating a random number to query SWAPI with
-        var min = questionTopics[questionTopic].queryRange[0];
-        var max = questionTopics[questionTopic].queryRange[1];
-        var apiIndex = Math.floor((Math.random() * max) + min);
+        // Instanciation d'une nouvelle question
+        this.questions[this.currentQuestionIndex] = new QuizQuestion(this, questionTopicIndex);
 
-        // Call to SWAPI
-        var data = this.swapiProvider.getSwapiData(questionTopics[questionTopic].topic, apiIndex)
-            .subscribe(data => {console.log(data)},
-              err => console.error(err),
-              () => console.log('done')
-            );
-
-        console.log("result from query =" + data);
-        return null;
+        // Appel vers SWAPI
+        this.swapiProvider.getAllPages(questionTopics[questionTopicIndex].topic).subscribe(
+            value => { ref.buildQuestionFromResource(value) },
+            error => { console.log(error) },
+            () => { console.log('Appel vers SWAPI terminé.') }
+        );
     }
+
+    /**
+     * Construit une nouvelle question à partir des ressources récupérées sur SWAPI
+     * @param resource
+     * @param index 
+     */
+    public buildQuestionFromResource(resources){
+
+        console.log(resources);
+
+        // On garde notre question dans une variable raccourcie
+        var quizQuestion = this.questions[this.currentQuestionIndex];
+        
+        // Obtention de toutes les questions potentielles sur le sujet
+        var possibleQuestions = questionTopics[quizQuestion.topic].questions;
+        // Sélection d'une question au hasard parmi celles-ci
+        var selectedQuestion = possibleQuestions[Math.floor(Math.random()*possibleQuestions.length)];
+
+        // Sélection d'une entrée aléatoire parmi celle récupérées sur SWAPI
+        let result = this.selectRandomResource(resources, quizQuestion.topic, []);
+        var selectedResource = result.selectedResource;
+        var indexedResponses = result.indexedResponses;
+
+        // Extraction des (ou de la) réponse(s) correcte(s) de l'entrée
+        var extractedAnswers = this.extractResourceArgs(selectedQuestion.answers, selectedResource);
+        // Extraction des arguments de l'entrée. Cela a pour but de remplacer les '%s' de la question
+        var extractedArguments = this.extractResourceArgs(selectedQuestion.args, selectedResource);
+        // Remplacement des '%s' avec les arguments récupérés
+        var builtText = this.parseQuestion(selectedQuestion.text, extractedArguments);
+
+        
+
+        // Construction de la question
+        quizQuestion.fullText = builtText;
+        quizQuestion.answer = extractedAnswers[0];
+        this.generateRandomChoices(quizQuestion, selectedQuestion, resources, indexedResponses);
+    }
+
+    /**
+     * Sélectionne une entrée aléatoire parmi la liste des entrées récupérés sur SWAPI et selon un intervalle donné
+     * @param resources
+     * @param topicIndex
+     */
+    public selectRandomResource(resources, topicIndex, indexedResponses){
+        
+        // On génère un nombre aléatoire parmi l'intervalle du sujet
+        var min = questionTopics[topicIndex].queryRange[0];
+        var max = questionTopics[topicIndex].queryRange[1];
+        var randomIndex = Math.floor((Math.random() * max) + min);
+
+        // On vérifie si on ne souhaite pas obtenir un résultat équivalent à ceux déjà indexés
+        if(indexedResponses.includes(randomIndex)){
+            return this.selectRandomResource(resources, topicIndex, indexedResponses);
+        }
+
+        // On retourne le résultat
+        if(resources[randomIndex] != undefined){
+            indexedResponses.push(randomIndex)
+            return {selectedResource:resources[randomIndex], indexedResponses:indexedResponses};
+        }
+
+        // Tant qu'on en trouve pas, on continue de chercher (récursion)
+        return this.selectRandomResource(resources, topicIndex, indexedResponses);
+    }
+
+    /**
+     * Extrait les arguments afin de les remplacer dans le texte de la question
+     * @param topicArgs
+     * @param resource
+     */
+    public extractResourceArgs(topicArgs, resource){
+        var extractedArgs = [];
+        topicArgs.forEach(arg => {
+            extractedArgs.push(resource[arg]);
+        });
+        return extractedArgs;
+    }
+
+    /**
+     * Parse la question avec les arguments fournis (= '%s')
+     * @param str
+     * @param arguments
+     */
+    public parseQuestion(text, extractedArguments) {
+        var i = 0;
+        return text.replace(/%s/g, function() {
+            return extractedArguments[i++];
+        });
+    }
+
+    /**
+     * Obtient {maxAnswers} de choix formattés pour la question
+     * @param maxAnswers 
+     * @param question 
+     */
+    public generateRandomChoices(question, selectedQuestion, resources, indexedResponses){
+
+        // Parmi les choix, on ajoute la bonne réponse. L'entrée 0 correspond donc toujours à la bonne réponse.
+        this.formatChoice(question, selectedQuestion, question.answer, true);
+
+        // On génère ensuite de fausses réponses
+        for(let i = 0; i < maxAnswers - 1; i++){
+
+            // TODO : différencier les réponses possibles
+
+            // On génère de fausses réponses à partir d'autres entrées de SWAPI sur le même sujet
+            let result = this.selectRandomResource(resources, question.topic, indexedResponses);
+            var newResource = result.selectedResource;
+            var indexedResponses = result.indexedResponses;
+
+            var args = this.extractResourceArgs(selectedQuestion.answers, newResource);
+
+            // On formatte les réponses pour les cas spécifiques
+            this.formatChoice(question, selectedQuestion, args[0], false);
+        }
+    }
+
+    /**
+     * En fonction du type de question, on formatte la réponse
+     * @param question 
+     * @param answer 
+     * @param randomChoices 
+     */
+    private formatChoice(question, selectedQuestion, answer, rightAnswer){
+
+        switch(selectedQuestion.tag){
+            case "color":
+                this.addElementAsChoice(question, selectedQuestion, {answer:answer, fullAnswer:colors[answer]})
+                break;
+
+            case "planetClimate":
+                this.addElementAsChoice(question, selectedQuestion, {answer:answer, fullAnswer:climates[answer]})
+                break;
+
+            case "planet":
+                // Appel vers SWAPI pour obtenir la planète
+                var urlElements = answer.split('/');
+                var planetId = urlElements[urlElements.length-2];
+
+                if(!rightAnswer){
+                    planetId = Math.floor((Math.random() * 
+                    questionTopics[question.topic].queryRange[1]) + 
+                    questionTopics[question.topic].queryRange[0]);
+                }
+                
+                var ref = this;
+
+                console.log("Nouvel appel avec l'index : " + planetId)
+
+                this.swapiProvider.getSwapiData("planets", planetId).subscribe(
+                    value => { 
+                        console.log(value);
+                        ref.addElementAsChoice(question, selectedQuestion, value)
+                        },
+                    error => { 
+                        if(error.status === 404){
+                            // Si la planète n'a pas été trouvée, on requestionne l'API
+                            ref.formatChoice(question, selectedQuestion, answer, rightAnswer);
+                        }
+                    },
+                    () => { console.log('Appel vers SWAPI terminé.') }
+                );
+                
+                break;
+            default:
+                this.addElementAsChoice(question, selectedQuestion, {answer:answer, fullAnswer:answer})
+                break;
+        }
+    }
+
+    /**
+     * Dernière étape : on ajoute un nouvel élément de réponse à la question.
+     * S'il ne reste plus d'élements à générer, on notifie le contexte que la question est prête.
+     * @param question
+     * @param element 
+     */
+    private addElementAsChoice(question, selectedQuestion, element){
+
+        switch(selectedQuestion.tag){
+            case "planet":
+                question.choices.push({answer:element.name, fullAnswer:element.name});
+                break;
+            default:
+                question.choices.push(element);
+                break;
+        }
+        
+        if(question.choices.length >= maxAnswers){
+            this.context.notifyAboutBuiltQuestion(question);
+        }
+    }
+
+}
+
+/**
+ * Une question du quiz
+ * -
+ * Contient toutes les informations relatives à une question du quiz
+ */
+class QuizQuestion {
+
+    /**
+     * Déclaration des variables
+     */
+
+    // Le quiz contenant cette question
+    public quiz;
+
+    // Le texte complet de la question
+    public fullText;
+
+    // L'index du sujet de la question
+    public topic;
+
+    // La réponse à la question (attribut json de SWAPI)
+    public answer;
+
+    // Les choix possibles pour répondre à cette question
+    // Contient les attributs :
+    //      - answer : la réponse à la question (non formattée)
+    //      - fullAnswer : la réponse à la question (formattée)
+    public choices;
+
+    /**
+     * Constructeur
+     * @param topic
+     */
+    constructor(_quiz, _topic) {
+        this.quiz = _quiz;
+        this.topic = _topic;
+        this.choices = [];
+    }
+
 }
