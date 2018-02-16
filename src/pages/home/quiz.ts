@@ -93,7 +93,7 @@ const colors = {"red":"Rouge","blue":"Bleu","green":"Vert","yellow":"Jaune","ora
 
 
 // Tous les climats formattés
-const climates = {"murky":"Sombre","temperate":"Tempéré","subartic":"Subarctique","arid":"Aride","unknown":"Inconnu","frozen":"Gelé","hot":"Chaud","moist":"Humide","tropical":"Tropical","artificial temperate ":"Artificiel tempéré","rocky":"Montagneux","windy":"Venteux","frigid":"Froid"}
+const climates = {"murky":"Sombre","temperate":"Tempéré","subartic":"Subarctique","arid":"Aride","unknown":"Inconnu","frozen":"Gelé","hot":"Chaud","moist":"Humide","tropical":"Tropical","artificial temperate":"Artificiel tempéré","rocky":"Montagneux","windy":"Venteux","frigid":"Froid","artic":"Arctique"}
 
 
 // Tous les états possibles du quiz
@@ -233,23 +233,23 @@ export class QuizSession {
         var selectedQuestion = possibleQuestions[Math.floor(Math.random()*possibleQuestions.length)];
 
         // Sélection d'une entrée aléatoire parmi celle récupérées sur SWAPI
-        let result = this.selectRandomResource(resources, quizQuestion.topic, []);
+        let result = this.selectRandomResource(resources, quizQuestion.topic, [], []);
         var selectedResource = result.selectedResource;
         var indexedResponses = result.indexedResponses;
 
         // Extraction des (ou de la) réponse(s) correcte(s) de l'entrée
         var extractedAnswers = this.extractResourceArgs(selectedQuestion.answers, selectedResource);
+        let indexedAnswers = [extractedAnswers[0]];
+
         // Extraction des arguments de l'entrée. Cela a pour but de remplacer les '%s' de la question
         var extractedArguments = this.extractResourceArgs(selectedQuestion.args, selectedResource);
         // Remplacement des '%s' avec les arguments récupérés
         var builtText = this.parseQuestion(selectedQuestion.text, extractedArguments);
 
-        
-
         // Construction de la question
         quizQuestion.fullText = builtText;
         quizQuestion.answer = extractedAnswers[0];
-        this.generateRandomChoices(quizQuestion, selectedQuestion, resources, indexedResponses);
+        this.generateRandomChoices(quizQuestion, selectedQuestion, resources, indexedResponses, indexedAnswers);
     }
 
     /**
@@ -257,7 +257,7 @@ export class QuizSession {
      * @param resources
      * @param topicIndex
      */
-    public selectRandomResource(resources, topicIndex, indexedResponses){
+    public selectRandomResource(resources, topicIndex, indexedResponses, indexedAnswers){
         
         // On génère un nombre aléatoire parmi l'intervalle du sujet
         var min = questionTopics[topicIndex].queryRange[0];
@@ -266,7 +266,7 @@ export class QuizSession {
 
         // On vérifie si on ne souhaite pas obtenir un résultat équivalent à ceux déjà indexés
         if(indexedResponses.includes(randomIndex)){
-            return this.selectRandomResource(resources, topicIndex, indexedResponses);
+            return this.selectRandomResource(resources, topicIndex, indexedResponses, indexedAnswers);
         }
 
         // On retourne le résultat
@@ -276,7 +276,7 @@ export class QuizSession {
         }
 
         // Tant qu'on en trouve pas, on continue de chercher (récursion)
-        return this.selectRandomResource(resources, topicIndex, indexedResponses);
+        return this.selectRandomResource(resources, topicIndex, indexedResponses, indexedAnswers);
     }
 
     /**
@@ -309,7 +309,7 @@ export class QuizSession {
      * @param maxAnswers 
      * @param question 
      */
-    public generateRandomChoices(question, selectedQuestion, resources, indexedResponses){
+    public generateRandomChoices(question, selectedQuestion, resources, indexedResponses, indexedAnswers){
 
         // Parmi les choix, on ajoute la bonne réponse. L'entrée 0 correspond donc toujours à la bonne réponse.
         this.formatChoice(question, selectedQuestion, question.answer, true);
@@ -317,18 +317,37 @@ export class QuizSession {
         // On génère ensuite de fausses réponses
         for(let i = 0; i < maxAnswers - 1; i++){
 
-            // TODO : différencier les réponses possibles
-
-            // On génère de fausses réponses à partir d'autres entrées de SWAPI sur le même sujet
-            let result = this.selectRandomResource(resources, question.topic, indexedResponses);
-            var newResource = result.selectedResource;
-            var indexedResponses = result.indexedResponses;
-
-            var args = this.extractResourceArgs(selectedQuestion.answers, newResource);
-
-            // On formatte les réponses pour les cas spécifiques
-            this.formatChoice(question, selectedQuestion, args[0], false);
+            // On une nouvelle fausse réponse
+            this.generateFalseResponse(question, selectedQuestion, resources, indexedResponses, indexedAnswers);
         }
+    }
+
+    /**
+     * Génère une fausse réponse aléatoire
+     * @param question 
+     * @param selectedQuestion 
+     * @param resources 
+     */
+    public generateFalseResponse(question, selectedQuestion, resources, indexedResponses, indexedAnswers){
+
+        // Sélection d'une ressource aléatoire
+        let result = this.selectRandomResource(resources, question.topic, indexedResponses, indexedAnswers);
+        var newResource = result.selectedResource;
+        var indexedResponses = result.indexedResponses;
+
+        // On vérifie qu'il ne s'agit pas d'un doublon
+        var answers = this.extractResourceArgs(selectedQuestion.answers, newResource);
+        if(indexedAnswers.includes(answers[0])){
+            // S'il y a doublon, on fait sauter le dernier choix de la question et on en cherche un autre
+            question.choices.splice(question.choices.length - 1, 1)
+            this.generateFalseResponse(question, selectedQuestion, resources, indexedResponses, indexedAnswers);
+        }
+
+        // On ajoute la réponse au tableau de vérification des doublons
+        indexedAnswers.push(answers[0]);
+
+        // On formatte les réponses pour les cas spécifiques
+        this.formatChoice(question, selectedQuestion, answers[0], false);
     }
 
     /**
@@ -345,7 +364,19 @@ export class QuizSession {
                 break;
 
             case "planetClimate":
-                this.addElementAsChoice(question, selectedQuestion, {answer:answer, fullAnswer:climates[answer]})
+
+                // Il peut y avoir plusieurs climats pour une même planète (séparés par une virgule)
+                let climatesForPlanet = answer.split(',');
+                let fullAnswer = "";
+                climatesForPlanet.forEach((element, i, array) => {
+                    console.log(element);
+                    fullAnswer = fullAnswer.concat(climates[element.trim()]);
+                    if (i !== array.length - 1){ 
+                        fullAnswer = fullAnswer.concat(", ");
+                    }
+                });
+
+                this.addElementAsChoice(question, selectedQuestion, {answer:answer, fullAnswer:fullAnswer})
                 break;
 
             case "planet":
