@@ -146,7 +146,7 @@ export class QuizConfig {
     public static colors = {"dark":"Foncés","red":"Rouge","blue":"Bleu","green":"Vert","yellow":"Jaune","orange":"Orange", "black":"Noir", "brown":"Marron", "blond":"Blond", "grey":"Gris", "gray":"Gris", "blonde":"Blond","white":"Blanc","auburn":"Roux","unknown":"Personne ne l'a jamais su...","gold":"Dorés" }
 
     // Tous les climats formattés
-    public static climates = {"murky":"Sombre","temperate":"Tempéré","subartic":"Subarctique","arid":"Aride","unknown":"Inconnu","frozen":"Gelé","hot":"Chaud","moist":"Humide","tropical":"Tropical","artificial temperate":"Artificiel tempéré","rocky":"Montagneux","windy":"Venteux","frigid":"Froid","artic":"Arctique","superheated":"Ébullition","humid":"Humide"}
+    public static climates = {"murky":"Sombre","temperate":"Tempéré","subartic":"Subarctique","arid":"Aride","unknown":"Inconnu","frozen":"Gelé","hot":"Chaud","moist":"Humide","tropical":"Tropical","artificial temperate":"Artificiel tempéré","rocky":"Montagneux","windy":"Venteux","frigid":"Froid","artic":"Arctique","superheated":"Ébullition","humid":"Humide","polluted":"Pollué"}
 
     // Tous les placeholders de chargement lorsqu'une réponse est correcte
     public static successPlaceholders = [
