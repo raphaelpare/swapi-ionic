@@ -18,12 +18,25 @@ import { Loading } from 'ionic-angular';
 })
 export class QuizPage {
 
+  // La session de quiz
   private session: QuizSession;
+
+  // La question en cours
   private currentQuestion: QuizQuestion;
+
+  // Le loader
   private loader: Loading;
+
+  // Le nombre maximum de question pour cette session (utilisé pour update l'UI)
   private maxQuestions: number;
+
+  // Le score (première ligne avec chiffres)
   private score: string;
+
+  // Le score (deuxième ligne avec le résultat descriptif)
   private textScore: string;
+
+  // La dernière réponse choisie
   private chosenAnswer = "";
 
   constructor(public navCtrl: NavController, public navParams: NavParams, public loadingCtrl: LoadingController) {
@@ -44,8 +57,10 @@ export class QuizPage {
    */
   chooseAnswer(answer, question){
 
-    let points = 0;
+    // Initialisation du texte du loader
     let loaderText = "";
+
+    // On indique d'une réponse a été choisie
     this.chosenAnswer = answer;
 
     if(answer === question.answer){ // bonne réponse
@@ -61,25 +76,29 @@ export class QuizPage {
 
     // Si on arrive à la fin du quiz
     if(this.session.currentQuestionIndex == QuizConfig.maxQuestions - 1){
+
+      // On affiche le score
       let finalScore = this.session.getFinalScore();
       this.score = finalScore.score;
       this.textScore = finalScore.textScore;
       this.session.state = QuizSession.QUIZ_OVER;
     }
 
+    // Action suivante à effectuer en fonction de l'état du quiz
     switch(this.session.state){
-      case QuizSession.QUIZ_STOPPED:
+      case QuizSession.QUIZ_STOPPED: // en arrêt
         break;
-      case QuizSession.QUIZ_RUNNING:
+      case QuizSession.QUIZ_RUNNING: // en cours
 
+        // Affichage du loader
         this.loader = this.loadingCtrl.create({
           content: loaderText
         });
         this.loader.present();
 
-        this.session.answerQuestion(this, {points:points});
+        this.session.answerQuestion(this);
         break;
-      case QuizSession.QUIZ_OVER:
+      case QuizSession.QUIZ_OVER: // terminé
         break;
     }
   }

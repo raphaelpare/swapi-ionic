@@ -283,7 +283,7 @@ export class QuizSession {
      * Déclenché lorsque le joueur choisie une réponse
      * @param {*} answer = la réponse
      */
-    public answerQuestion(context, answer){
+    public answerQuestion(context){
 
         // On défini le contexte afin de lui notifier plus tard qu'une nouvelle question a été générée
         this.context = context;
@@ -343,8 +343,6 @@ export class QuizSession {
      * @param resource = la liste des entrées récupérées sur SWAPI
      */
     public buildQuestionFromResource(resources){
-
-        console.log(resources)
 
         // On garde notre question dans une variable raccourcie
         var quizQuestion = this.questions[this.currentQuestionIndex];
@@ -490,8 +488,6 @@ export class QuizSession {
      */
     private formatChoice(question, selectedQuestion, answer, rightAnswer){
 
-        console.log("ADDED : " + answer);
-
         switch(selectedQuestion.tag){
 
             case "text":
@@ -547,20 +543,14 @@ export class QuizSession {
                 // Appel vers SWAPI pour obtenir la planète
                 var urlElements = answer.split('/');
                 var planetId = urlElements[urlElements.length-2];
-
-                // if(!rightAnswer){
-                //     planetId = Math.floor((Math.random() * 
-                //     QuizConfig.questionTopics[question.topic].queryRange[1]) + 
-                //     QuizConfig.questionTopics[question.topic].queryRange[0]);
-                // }
                 
+                // On regarde la référence pour le callback de la promise
                 var ref = this;
 
-                console.log("recherche de la planète...")
-
+                // Recherche de la planète
                 this.swapiProvider.getSwapiData("planets", planetId).subscribe(
                     value => { 
-                            console.log("yay")
+                            // Planète trouvée, on l'ajoute
                             ref.addElementAsChoice(question, selectedQuestion, {name:answer,fullObject:value})
                         },
                     error => { 
@@ -574,6 +564,7 @@ export class QuizSession {
                 
                 break;
             default:
+                // Pour une question sans tag
                 this.addElementAsChoice(question, selectedQuestion, {answer:answer, fullAnswer:answer})
                 break;
         }
@@ -588,7 +579,9 @@ export class QuizSession {
     private addElementAsChoice(question, selectedQuestion, element){
 
         switch(selectedQuestion.tag){
-            case "planet":
+            // Formattage supplémentaire pour les éléments ayant comme attribut un URL à aller fetch
+            case "planet":  // par exemple : un personnage a pour origine telle planète, ce qui nécessite un supplémentaire appel vers l'API 
+                            // puis un formattage de cette planète qui a été fetched
                 let antiUndefined = element.fullObject.name;
                 if(antiUndefined === "" || antiUndefined === "unknown" || antiUndefined === "n/a"){
                     antiUndefined = "C'est un mystère..."
@@ -600,9 +593,12 @@ export class QuizSession {
                 break;
         }
 
+        // On mélange les questions pour éviter que la première soit toujours la bonne
         question.choices = this.shuffle(question.choices);
         
+        // Si on atteint lenombre mac de choix par question après avoir généré ce choix
         if(question.choices.length >= QuizConfig.maxAnswers){
+            // On notifie le contexte que la question est construite
             this.context.notifyAboutBuiltQuestion(question);
         }
     }
@@ -635,15 +631,13 @@ export class QuizSession {
      */
     public getFinalScore(){
 
-        console.log("Loggin side : " + this.side)
-
         let finalScore = "Résultat final : "+ this.points +" sur "+ QuizConfig.maxQuestions;
         let textScore = "";
         switch(this.side){
-            case "light":
+            case "light": // côté lumière
                 textScore = textScore.concat(QuizConfig.resultsJedi[this.points]);
                 break;
-            case "dark":
+            case "dark": // côté obscur
                 textScore = textScore.concat(QuizConfig.resultsSith[this.points]);
                 break;
             default:
