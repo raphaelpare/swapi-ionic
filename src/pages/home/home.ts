@@ -1,6 +1,8 @@
 import { Component } from '@angular/core';
 import { NavController } from 'ionic-angular';
-import { QuizSession } from './quiz';
+import { QuizSession } from '../quiz/quiz-core';
+import { LoadingController } from 'ionic-angular';
+import { Loading } from 'ionic-angular';
 
 @Component({
   selector: 'page-home',
@@ -9,26 +11,35 @@ import { QuizSession } from './quiz';
 })
 export class HomePage {
 
-  constructor(public navCtrl: NavController, public quizSession: QuizSession) {
+  private loader: Loading;
+
+  constructor(public navCtrl: NavController, public quizSession: QuizSession, public loadingCtrl: LoadingController) {
 
   }
 
-  chooseAnswer(item){
+  chooseAnswer(side){
 
-    // console.log(item);
+    this.loader = this.loadingCtrl.create({
+      content: "Bien. Nous allons à présent tester vos connaissances..."
+    });
+    this.loader.present();
 
-    // var choiceId = item.attributes['choice-id'].value;
-    // var points = item.attributes['points'].value;
-
-    // console.log(choiceId);
-    // console.log(points);
-
-    var nextQuestion = this.quizSession.answerQuestion(this, {choiceId:0,points:1});
-    console.log(nextQuestion);
+    // Démarrage du quiz lors du choix du côté de la force
+    this.quizSession.start(this, side);
   }
 
+  /**
+   * Callback appelé lorsque la première question a été construite
+   * @param question 
+   */
   public notifyAboutBuiltQuestion(question){
-    console.log(question);
+
+    this.loader.dismiss();
+
+    console.log("Yeaaah")
+
+    // Affichage du quiz et de la première question
+    this.navCtrl.push('QuizPage', { question:question, session:this.quizSession });
   }
 
 }

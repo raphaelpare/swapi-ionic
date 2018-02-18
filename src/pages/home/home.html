@@ -1,19 +1,20 @@
 <ion-header>
   <ion-navbar>
-    <ion-title text-center><img src="/assets/imgs/starwars.gif"></ion-title>
+    <ion-title text-center><img height="300" width="480" src="/assets/imgs/starwars.gif"></ion-title>
   </ion-navbar>
 </ion-header>
 
 <ion-content padding text-center>
-  <h2>Avez vous la force ?</h2>
+  <h2>Avez-vous la force ?</h2>
   <p>
-    Testez vos connaissances en prenant part à ce quiz intergalactique!
+    Testez vos connaissances en prenant part à ce quiz intergalactique !
     <br/>
-    Vous pouvez également améliorer vos connaissance en analysant le Wiki
+    N'hésitez pas à améliorer vos connaissances en consultant le Wiki avant de vous lancer.
+    
   </p>
   <p>
-    Si vous êtes prêt, lancez vous et que la force soit avec vous!
+    Si vous êtes prêt, choississez votre côté et que la Force soit avec vous!
   </p>
-  <button ion-button choice-id="1" points=3 color="dark" large (click)="chooseAnswer($element)">Côté Obscure</button>
-  <button ion-button choice-id="2" points=2 color="blue" large (click)="chooseAnswer($element)">Côté Lumière</button>
+  <button ion-button choice-id="1" large (click)="chooseAnswer('dark')">Côté Obscure</button>
+  <button ion-button choice-id="2" large (click)="chooseAnswer('light')">Côté Lumineux</button>
 </ion-content>
