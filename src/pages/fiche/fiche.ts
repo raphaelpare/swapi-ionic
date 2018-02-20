@@ -44,7 +44,10 @@ export class FichePage {
         break;        
       case 'Espèces':
         this.ficheEspece();
-        break;        
+        break;
+      case 'Films':
+        this.ficheFilm();
+        break;
       default:
         this.fiche = [{"prop":"Pas d'information","value":""}];
         break;
@@ -167,6 +170,26 @@ export class FichePage {
     {
       "prop": "Langue",
       "value": this.infos.language
+    }
+    ]
+  }
+
+  ficheFilm() {
+    this.fiche = [{
+      "prop": "Titre",
+      "value": this.infos.title
+    },
+    {
+      "prop": "Numéro de l'épisode",
+      "value": this.infos.episode_id
+    },
+    {
+      "prop": "Date de sortie",
+      "value": this.infos.release_date
+    },
+    {
+      "prop": "Directeur",
+      "value": this.infos.director
     }
     ]
   }

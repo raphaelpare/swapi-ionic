@@ -16,7 +16,7 @@
 <ion-content >
     <ion-list *ngIf="(items)">
         <button ion-item *ngFor="let item of items" (click)="itemSelected(item)">
-          {{ item.name }}
+          {{ item.name ? item.name : item.title }}
         </button>  
     </ion-list>
     <h2 *ngIf="!(items)" text-center>Aucun résultat</h2>
