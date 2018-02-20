@@ -170,15 +170,15 @@ export class QuizConfig {
 
     public static resultsJedi = {
         "0":"Magnifique performance. Vous n'avez plus qu'à retourner faire votre première année à l'Académie des Jedis !",
-        "1":"Vous n'avez que très peu d'affinité avec la force.",
+        "1":"Vous n'avez que très peu d'affinité avec la Force.",
         "2":"R2-D2, c'est toi ?",
         "3":"Un score très mitigé. Nous vous conseillons vivement de retourner consulter la banque de données...",
-        "4":"En dessous de la moyenne. Vous échouez à l'épreuve d'entrée de très peu !",
-        "5":"Pas mal, mais encore loin d'un fin connaisseur de la SAGA !",
+        "4":"En dessous de la moyenne. Vous échouez de très peu à l'épreuve d'entrée au conseil des Jedis !",
+        "5":"Pas mal, mais vous êtes encore loin de pouvoir vous mesurer à un maître Jedi !",
         "6":"Vous êtes sur la bonne voie ! Attention cependant à ne pas vous emballer...",
-        "7":"Un score honorable. Le rang de chevalier Jedi vous conviendrait parfaitement !",
+        "7":"Un score honorable. Le rang de chevalier Jedi vous conviendrait à ravir !",
         "8":"Vous avez quelque chose de spécial en vous. Une certaine affinité avec la Force !",
-        "9":"Le sénat vous accorderait volontier le rang de maître Jedi !",
+        "9":"Le conseil vous accorderait volontier le rang de maître Jedi !",
         "10":"Vous êtes l'élu, c'est certain ! Vous êtes né pour rétablir l'équilibre dans la Force !"
     }
 
@@ -189,11 +189,11 @@ export class QuizConfig {
         "3":"Un score très mitigé. Nous vous conseillons vivement de retourner consulter la banque de données...",
         "4":"En dessous de la moyenne. Malheureusement pour vous, même un acolyte Sith ne se contente pas d'un score aussi faible !",
         "5":"Un score encore trop neutre pour voir pleinement la surface du côté obscur...",
-        "6":"Vous êtes sur la bonne voie ! Attention cependant à ne pas décevoir l'empereur...",
+        "6":"Vous êtes sur la bonne voie ! Attention cependant à ne pas décevoir l'Empereur...",
         "7":"Un score honorable. Le rang de maraudeur Sith vous conviendrait à merveille !",
         "8":"Vous avez quelque chose de spécial en vous. Une certaine affinité avec le côté obscur de la Force !",
-        "9":"Digne d'un seigneur Sith, vos connaissances et votre puissance dépasse toutes les espérances de vos adversaires !",
-        "10":"L'empereur a trouvé son nouvel apprenti... Même Dark Vador vous redoute !"
+        "9":"Digne d'un seigneur Sith, vos connaissances et votre puissance dépassent toutes les attentes de vos adversaires !",
+        "10":"L'Empereur semble a trouvé son nouvel apprenti... Même Dark Vador vous redoute !"
     }
 }
 
